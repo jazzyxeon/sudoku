@@ -3,11 +3,13 @@ package sudoku;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Scanner;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Grid {
 	
 	Integer[] valid = {1,2,3,4,5,6,7,8,9};
-	String[] validAction = {"1","2","3","4","5","6","7","8","9"};
+	String[] validAction = Stream.of(valid).map(Object::toString).toArray(String[]::new);
 	public ArrayList<TileGroup> grid = new ArrayList<TileGroup>();
 	
 	public Grid() {
@@ -128,11 +130,11 @@ public class Grid {
 		//check if setting the number at the position is valid for the given row and col in the entire grid
 		if (!tg.isValid(completed) || !checkSurroundings(tileGroup, position, completed)) {
 			tile.setNum(originalValue);
-			System.err.println("Unable to put in "+num+" in Group "+tileGroup+" at index "+position+", as it violates the tile group uniqueness rule.\nReverting to previous value of "+originalValue);
+			System.err.println("Unable to put in "+num+" in Group "+tileGroup+" at index "+position+", as it violates the tile group uniqueness rule.\nReverting to previous value of "+originalValue+"\n\n");
 			return;
 		}
 		
-		System.out.println("Successfully placed "+num+" in Group "+tileGroup+" at index "+position);
+		System.out.println("Successfully placed "+num+" in Group "+tileGroup+" at index "+position+"\n\n");
 	}
 	
 	public boolean checkSurroundings(int tileGroup, int position, boolean completed) {
@@ -244,14 +246,6 @@ public class Grid {
 		return solved;
 	}
 	
-
-	
-	public static void main(String[] args) {
-		Grid sudoku = new Grid();
-		System.out.println(sudoku);
-		sudoku.processInput();
-	}
-	
 	void processInput() {
 		String setup = "Pick an action (type number, then press enter):\n";
 		setup += "1 -> Insert a number\n";
@@ -286,7 +280,6 @@ public class Grid {
 					int num = prompt(numQuestion, in, validAction);
 					if (num != -1) {
 						putNumber(num, tileGroup, position);
-						System.out.println(grid);
 					}
 					else {
 						System.err.println("Fatal Error: the input number resolved to -1 and cannot be processed");
@@ -294,8 +287,8 @@ public class Grid {
 				}
 				else {
 					putNumber(0, tileGroup, position);
-					System.out.println(grid);
 				}
+				System.out.println(this);
 			}
 			else {
 				System.err.println("Fatal Error: either the tile group or position resolved to -1 and cannot be processed");
@@ -314,10 +307,8 @@ public class Grid {
 			String a = scanner.next();
 			
 			if (!Arrays.asList(validActions).contains(a)) {
-				System.err.print("Please enter a valid action in the form of an integer as follows:\n");
-				for (Object x : validActions) {
-					System.err.println(x);
-				}
+				System.err.print("Please enter a valid action in the form of number from the following options:\n");
+				System.err.print(Stream.of(validActions).collect(Collectors.joining(", ")));
 				continue;
 			}
 			out = Integer.parseInt(a);
@@ -326,11 +317,21 @@ public class Grid {
 		return out;
 	}
 	
+	public static void main(String[] args) {
+		Grid sudoku = new Grid();
+		System.out.println(sudoku);
+		sudoku.processInput();
+	}
+	
 	@Override
 	public String toString() {
 		String out = "";
-		for (int i = 0; i < grid.size(); i++) {
-			out += grid.get(i) + "\n";
+		TileGroup[] tgs = new TileGroup[3];
+		for (int i = 1; i < 9; i+=3) {
+			for (int j = 0; j < 3; j++) {
+				ArrayList<Integer> list = this.getAllNumbersInPosition(0, j, 0, i, tgs);
+				out += list.stream().map(Object::toString).collect(Collectors.joining(" | ")) + (j < 2 ? "\n" : "\n\n");
+			}
 		}
 		return out;
 	}
