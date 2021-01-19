@@ -82,7 +82,7 @@ public class Grid {
 //					
 //				}
 //			}
-			System.out.println('a');
+			
 			break;
 		}
 	}
