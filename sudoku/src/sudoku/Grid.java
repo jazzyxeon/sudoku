@@ -69,6 +69,8 @@ public class Grid {
 		initialiseValues(8, 2, 5);
 		initialiseValues(8, 3, 6);
 		initialiseValues(8, 8, 8);
+		
+		System.out.println(this);
 	}
 	
 	void solve() {
@@ -319,7 +321,6 @@ public class Grid {
 	
 	public static void main(String[] args) {
 		Grid sudoku = new Grid();
-		System.out.println(sudoku);
 		sudoku.processInput();
 	}
 	
