@@ -1,10 +1,13 @@
 package sudoku;
 
+import java.util.Arrays;
+import java.util.stream.Stream;
+
 public class TileGroup {
 	
 	public final int tileGroup;
 	public Tile[] tiles = new Tile[9];
-	int[] valid = {1,2,3,4,5,6,7,8,9};
+	Integer[] valid = {1,2,3,4,5,6,7,8,9};
 	
 	public TileGroup(int tileGroup) {
 		if (tileGroup < 1) {
@@ -18,6 +21,13 @@ public class TileGroup {
 		}
 	}
 	
+	public int indexOf(int number) {
+		if (!Arrays.asList(valid).contains(number) && number != 0) {
+			throw new Error("Invalid input: only numbers from 0 - 9 are allowed");
+		}
+		
+		return Arrays.asList(Stream.of(tiles).map(n -> n.getNum()).toArray()).indexOf(number);
+	}
 	
 	
 	public boolean isValid(boolean checkSolved) {

@@ -35,7 +35,7 @@ public class Tile {
 		return num == 0;
 	}
 	
-	public int getNum() {
+	public Integer getNum() {
 		return num;
 	}
 

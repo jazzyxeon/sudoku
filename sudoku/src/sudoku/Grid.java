@@ -2,7 +2,9 @@ package sudoku;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -74,32 +76,52 @@ public class Grid {
 	}
 	
 	void solve() {
+		TileGroup[] toCheck = new TileGroup[3];
 		while (!isComplete(grid)) {
-//			for (int i = 0; i < grid.size(); i++) {
-//				if (grid.get(i).isComplete()) continue;
-//				
-//				if (Arrays.asList(grid.get(i).tiles).indexOf(0) != -1) {
-//					
-//				}
-//			}
-			
-			break;
+			for (int i = 0; i < grid.size(); i++) {
+				TileGroup tg = grid.get(i);
+				if (tg.isComplete()) continue;
+				
+				for (Tile t : tg.tiles) {
+					if (t.getNum() != 0) continue;
+					
+					int emptyPos = t.getPosition().row + t.getPosition().col + (t.getPosition().row * 2);
+					
+					int rowRefIndex = emptyPos / 3;
+					int rowIndex = i % 3;
+					
+					int colRefIndex = emptyPos % 3;
+					int colIndex = i / 3;
+					
+					ArrayList<Integer> rowNumbers = getAllNumbersInPosition(0, rowRefIndex, rowIndex, i+1, toCheck);
+					ArrayList<Integer> colNumbers = getAllNumbersInPosition(1, colRefIndex, colIndex, i+1, toCheck);
+					
+					Stream<Integer> rowStream = rowNumbers.stream().filter(n -> n != 0);
+					Stream<Integer> colStream = colNumbers.stream().filter(n -> n != 0);
+					Stream<Integer> tileGroupStream = Stream.of(tg.tiles).filter(n -> n.getNum() != 0).map(nm -> nm.getNum());
+					
+					Set<Integer> placed = Stream.concat(tileGroupStream, Stream.concat(rowStream, colStream)).distinct().collect(Collectors.toSet()); 
+					HashSet<Integer> validSet = new HashSet<Integer>(Arrays.asList(valid));
+					validSet.removeAll(placed);
+					
+					if (validSet.size() > 1) continue;
+					
+					putNumber(validSet.stream().findFirst().get(), i+1, emptyPos+1);
+				}
+			}
 		}
+		System.out.println(this);
 	}
 	
 	void initialiseValues(int tileGroupIndex, int num, int position) {
-		TilePosition<Integer, Integer> coord = positionToCoord(position);
+		TilePosition<Integer, Integer> coord = new TilePosition<>((position-1) /3,(position-1) % 3);
 		grid.get(tileGroupIndex).tiles[position-1] = new Tile(num, coord.row, coord.col, true);
 		if (!checkSurroundings(tileGroupIndex+1, position, false)) {
 			throw new Error("Unable to put in "+num+" in Group "+(tileGroupIndex+1)+" at index "+position+", as it violates the tile group uniqueness rule.");
 		}
 	}
 	
-	TilePosition<Integer, Integer> positionToCoord(int position) {
-		return new TilePosition<>((position-1) /3,(position-1) % 3);
-	}
-	
-	public void putNumber(int num, int tileGroup, int position) {
+	public boolean putNumber(int num, int tileGroup, int position) {
 		if (tileGroup < 0 || position < 0 ) {
 			throw new Error("Only non-negative integers are valid tile group and position");
 		}
@@ -118,7 +140,7 @@ public class Grid {
 		Tile tile = tg.tiles[position-1];
 		if (tile.setupNum) {
 			System.err.println("Unable to replace a game config value");
-			return;
+			return false;
 		}
 		int originalValue = tile.getNum();
 		tile.setNum(num);
@@ -133,10 +155,11 @@ public class Grid {
 		if (!tg.isValid(completed) || !checkSurroundings(tileGroup, position, completed)) {
 			tile.setNum(originalValue);
 			System.err.println("Unable to put in "+num+" in Group "+tileGroup+" at index "+position+", as it violates the tile group uniqueness rule.\nReverting to previous value of "+originalValue+"\n\n");
-			return;
+			return false;
 		}
 		
 		System.out.println("Successfully placed "+num+" in Group "+tileGroup+" at index "+position+"\n\n");
+		return true;
 	}
 	
 	public boolean checkSurroundings(int tileGroup, int position, boolean completed) {
@@ -321,7 +344,8 @@ public class Grid {
 	
 	public static void main(String[] args) {
 		Grid sudoku = new Grid();
-		sudoku.processInput();
+//		sudoku.processInput();
+		sudoku.solve();
 	}
 	
 	@Override
