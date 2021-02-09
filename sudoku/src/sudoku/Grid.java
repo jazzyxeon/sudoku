@@ -19,64 +19,63 @@ public class Grid {
 			grid.add(new TileGroup(i+1));
 		}
 		
-		initialiseValues(0, 6, 2);
-		initialiseValues(0, 5, 4);
-		initialiseValues(0, 3, 5);
-		initialiseValues(0, 7, 6);
-		initialiseValues(0, 4, 8);
+		putNumber(6, 1, 2, true);
+		putNumber(5, 1, 4, true);
+		putNumber(3, 1, 5, true);
+		putNumber(7, 1, 6, true);
+		putNumber(4, 1, 8, true);
 		
 		
-		initialiseValues(1, 3, 1);
-		initialiseValues(1, 9, 5);
-		initialiseValues(1, 6, 9);
+		putNumber(3, 2, 1, true);
+		putNumber(9, 2, 5, true);
+		putNumber(6, 2, 9, true);
 		
 		
-		initialiseValues(2, 8, 1);
-		initialiseValues(2, 4, 3);
-		initialiseValues(2, 3, 7);
-		initialiseValues(2, 7, 9);
+		putNumber(8, 3, 1, true);
+		putNumber(4, 3, 3, true);
+		putNumber(3, 3, 7, true);
+		putNumber(7, 3, 9, true);
+	
 		
-		
-		initialiseValues(3, 9, 2);
-		initialiseValues(3, 7, 7);
-		initialiseValues(3, 1, 8);
-		initialiseValues(3, 3, 9);
+		putNumber(9, 4, 2, true);
+		putNumber(7, 4, 7, true);
+		putNumber(1, 4, 8, true);
+		putNumber(3, 4, 9, true);
 		
 
-		initialiseValues(4, 5, 2);
-		initialiseValues(4, 1, 3);
-		initialiseValues(4, 6, 7);
-		initialiseValues(4, 2, 8);
-		
-		
-		initialiseValues(5, 2, 1);
-		initialiseValues(5, 3, 2);
-		initialiseValues(5, 8, 3);
-		initialiseValues(5, 4, 8);
+		putNumber(5, 5, 2, true);
+		putNumber(1, 5, 3, true);
+		putNumber(6, 5, 7, true);
+		putNumber(2, 5, 8, true);
 	
 		
-		initialiseValues(6, 3, 1);
-		initialiseValues(6, 6, 3);
-		initialiseValues(6, 1, 7);
-		initialiseValues(6, 2, 9);
-		
-		
-		initialiseValues(7, 4, 1);
-		initialiseValues(7, 6, 5);
-		initialiseValues(7, 9, 9);
+		putNumber(2, 6, 1, true);
+		putNumber(3, 6, 2, true);
+		putNumber(8, 6, 3, true);
+		putNumber(4, 6, 8, true);
 	
 		
-		initialiseValues(8, 1, 2);
-		initialiseValues(8, 5, 4);
-		initialiseValues(8, 2, 5);
-		initialiseValues(8, 3, 6);
-		initialiseValues(8, 8, 8);
+		putNumber(3, 7, 1, true);
+		putNumber(6, 7, 3, true);
+		putNumber(1, 7, 7, true);
+		putNumber(2, 7, 9, true);
+		
+		
+		putNumber(4, 8, 1, true);
+		putNumber(6, 8, 5, true);
+		putNumber(9, 8, 9, true);
+	
+		
+		putNumber(1, 9, 2, true);
+		putNumber(5, 9, 4, true);
+		putNumber(2, 9, 5, true);
+		putNumber(3, 9, 6, true);
+		putNumber(8, 9, 8, true);
 		
 		System.out.println(this);
 	}
 	
 	void solve() {
-		TileGroup[] toCheck = new TileGroup[3];
 		while (!isComplete(grid)) {
 			for (int i = 0; i < grid.size(); i++) {
 				TileGroup tg = grid.get(i);
@@ -87,14 +86,8 @@ public class Grid {
 					
 					int emptyPos = t.getPosition().row + t.getPosition().col + (t.getPosition().row * 2);
 					
-					int rowRefIndex = emptyPos / 3;
-					int rowIndex = i % 3;
-					
-					int colRefIndex = emptyPos % 3;
-					int colIndex = i / 3;
-					
-					ArrayList<Integer> rowNumbers = getAllNumbersInPosition(0, rowRefIndex, rowIndex, i+1, toCheck);
-					ArrayList<Integer> colNumbers = getAllNumbersInPosition(1, colRefIndex, colIndex, i+1, toCheck);
+					ArrayList<Integer> rowNumbers = checkSurroundings(0, i+1, emptyPos+1, false);
+					ArrayList<Integer> colNumbers = checkSurroundings(1, i+1, emptyPos+1, false);
 					
 					Stream<Integer> rowStream = rowNumbers.stream().filter(n -> n != 0);
 					Stream<Integer> colStream = colNumbers.stream().filter(n -> n != 0);
@@ -105,23 +98,16 @@ public class Grid {
 					validSet.removeAll(placed);
 					
 					if (validSet.size() > 1) continue;
-					
-					putNumber(validSet.stream().findFirst().get(), i+1, emptyPos+1);
+
+					putNumber(validSet.stream().findFirst().get(), i+1, emptyPos+1, false);
 				}
 			}
 		}
 		System.out.println(this);
 	}
 	
-	void initialiseValues(int tileGroupIndex, int num, int position) {
-		TilePosition<Integer, Integer> coord = new TilePosition<>((position-1) /3,(position-1) % 3);
-		grid.get(tileGroupIndex).tiles[position-1] = new Tile(num, coord.row, coord.col, true);
-		if (!checkSurroundings(tileGroupIndex+1, position, false)) {
-			throw new Error("Unable to put in "+num+" in Group "+(tileGroupIndex+1)+" at index "+position+", as it violates the tile group uniqueness rule.");
-		}
-	}
 	
-	public boolean putNumber(int num, int tileGroup, int position) {
+	public void putNumber(int num, int tileGroup, int position, boolean init) {
 		if (tileGroup < 0 || position < 0 ) {
 			throw new Error("Only non-negative integers are valid tile group and position");
 		}
@@ -137,13 +123,21 @@ public class Grid {
 			throw new Error("Fatal Error: tile group mismatch between the given input and grid tile groups");
 		}
 		
+		if (init) {
+			//initialise value
+			TilePosition<Integer, Integer> coord = new TilePosition<>((position-1) /3,(position-1) % 3);
+			tg.tiles[position-1] = new Tile(num, coord.row, coord.col, init);
+			return;
+		}
+		
 		Tile tile = tg.tiles[position-1];
 		if (tile.setupNum) {
 			System.err.println("Unable to replace a game config value");
-			return false;
+			return;
 		}
 		int originalValue = tile.getNum();
 		tile.setNum(num);
+		
 		
 		boolean completed = true;
 		for (int i = 0; i < grid.size(); i++) {
@@ -152,28 +146,24 @@ public class Grid {
 		
 		//check if valid in its own tilegroup
 		//check if setting the number at the position is valid for the given row and col in the entire grid
-		if (!tg.isValid(completed) || !checkSurroundings(tileGroup, position, completed)) {
+		ArrayList<Integer> rowNumbers = checkSurroundings(0, tileGroup, position, completed);
+		ArrayList<Integer> colNumbers = checkSurroundings(1, tileGroup, position, completed);
+		if (!tg.isValid(completed) || !(isValid(rowNumbers, completed) && isValid(colNumbers, completed)) ) {
 			tile.setNum(originalValue);
 			System.err.println("Unable to put in "+num+" in Group "+tileGroup+" at index "+position+", as it violates the tile group uniqueness rule.\nReverting to previous value of "+originalValue+"\n\n");
-			return false;
+			return;
 		}
 		
 		System.out.println("Successfully placed "+num+" in Group "+tileGroup+" at index "+position+"\n\n");
-		return true;
+		
+		return;
 	}
 	
-	public boolean checkSurroundings(int tileGroup, int position, boolean completed) {
-		int rowRefIndex = (position-1) / 3;
-		int rowIndex = (tileGroup-1) % 3;
+	public ArrayList<Integer> checkSurroundings(int rowOrCol, int tileGroup, int position, boolean completed) {
+		int refIndex = rowOrCol == 0 ? (position-1) / 3 : (position-1) % 3;
+		int index = rowOrCol == 0 ? (tileGroup-1) % 3 : (tileGroup-1) / 3;
 		
-		int colRefIndex = (position-1) % 3;
-		int colIndex = (tileGroup-1) / 3;
-		
-		TileGroup[] toCheck = new TileGroup[3];
-		ArrayList<Integer> rowNumbers = getAllNumbersInPosition(0, rowRefIndex, rowIndex, tileGroup, toCheck);
-		ArrayList<Integer> colNumbers = getAllNumbersInPosition(1, colRefIndex, colIndex, tileGroup, toCheck);
-		
-		return isValid(rowNumbers, completed) && isValid(colNumbers, completed);
+		return getAllNumbersInPosition(rowOrCol, refIndex, index, tileGroup, new TileGroup[3]);
 	}
 	
 	private ArrayList<Integer> getAllNumbersInPosition(int ref, int refIndex, int index, int tileGroup, TileGroup[] toCheck) {
@@ -304,14 +294,14 @@ public class Grid {
 				if (action == 1) {
 					int num = prompt(numQuestion, in, validAction);
 					if (num != -1) {
-						putNumber(num, tileGroup, position);
+						putNumber(num, tileGroup, position, false);
 					}
 					else {
 						System.err.println("Fatal Error: the input number resolved to -1 and cannot be processed");
 					}
 				}
 				else {
-					putNumber(0, tileGroup, position);
+					putNumber(0, tileGroup, position, false);
 				}
 				System.out.println(this);
 			}
