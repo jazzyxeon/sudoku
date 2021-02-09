@@ -34,6 +34,7 @@ public class Grid {
 					
 					int emptyPos = t.getPosition().row + t.getPosition().col + (t.getPosition().row * 2);
 					
+					
 					ArrayList<Integer> rowNumbers = checkSurroundings(0, i+1, emptyPos+1, false);
 					ArrayList<Integer> colNumbers = checkSurroundings(1, i+1, emptyPos+1, false);
 					
