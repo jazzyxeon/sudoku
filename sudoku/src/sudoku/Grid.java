@@ -14,63 +14,11 @@ public class Grid {
 	String[] validAction = Stream.of(valid).map(Object::toString).toArray(String[]::new);
 	public ArrayList<TileGroup> grid = new ArrayList<TileGroup>();
 	
-	public Grid() {
+	public Grid(int[][] initValues) {
 		for (int i = 0; i < 9; i++) {
 			grid.add(new TileGroup(i+1));
 		}
-		
-		putNumber(6, 1, 2, true);
-		putNumber(5, 1, 4, true);
-		putNumber(3, 1, 5, true);
-		putNumber(7, 1, 6, true);
-		putNumber(4, 1, 8, true);
-		
-		
-		putNumber(3, 2, 1, true);
-		putNumber(9, 2, 5, true);
-		putNumber(6, 2, 9, true);
-		
-		
-		putNumber(8, 3, 1, true);
-		putNumber(4, 3, 3, true);
-		putNumber(3, 3, 7, true);
-		putNumber(7, 3, 9, true);
-	
-		
-		putNumber(9, 4, 2, true);
-		putNumber(7, 4, 7, true);
-		putNumber(1, 4, 8, true);
-		putNumber(3, 4, 9, true);
-		
-
-		putNumber(5, 5, 2, true);
-		putNumber(1, 5, 3, true);
-		putNumber(6, 5, 7, true);
-		putNumber(2, 5, 8, true);
-	
-		
-		putNumber(2, 6, 1, true);
-		putNumber(3, 6, 2, true);
-		putNumber(8, 6, 3, true);
-		putNumber(4, 6, 8, true);
-	
-		
-		putNumber(3, 7, 1, true);
-		putNumber(6, 7, 3, true);
-		putNumber(1, 7, 7, true);
-		putNumber(2, 7, 9, true);
-		
-		
-		putNumber(4, 8, 1, true);
-		putNumber(6, 8, 5, true);
-		putNumber(9, 8, 9, true);
-	
-		
-		putNumber(1, 9, 2, true);
-		putNumber(5, 9, 4, true);
-		putNumber(2, 9, 5, true);
-		putNumber(3, 9, 6, true);
-		putNumber(8, 9, 8, true);
+		initialiseValuesByRow(initValues);
 		
 		System.out.println(this);
 	}
@@ -135,6 +83,7 @@ public class Grid {
 			System.err.println("Unable to replace a game config value");
 			return;
 		}
+		
 		int originalValue = tile.getNum();
 		tile.setNum(num);
 		
@@ -332,8 +281,44 @@ public class Grid {
 		return out;
 	}
 	
+	void initialiseValuesByRow(int[][] initValues) {
+		for (int i = 0; i < initValues.length; i++) {
+			for (int j = 0; j < initValues.length; j++) {
+				if (initValues[i][j] == 0) continue;
+				int tileGroup = (i/3 + j/3) + (i < 3 ? 1 : (i > 2 && i < 6 ? 3 : 5));
+				int initPos = (i%3) * 3 + (j%3) + 1;
+				putNumber(initValues[i][j], tileGroup, initPos, true);
+			}
+		}
+	}
+	
+	void initialiseValuesByTileGroup(int[][] initValues) {
+		//Use this if initializing per 9-tile group from top left to right instead of per row of sudoku grid
+		for (int i = 0; i < initValues.length; i++) {
+			for (int j = 0; j < initValues.length; j++) {
+				if (initValues[i][j] == 0) continue;
+				putNumber(initValues[i][j], i+1, j+1, true);
+			}
+		}
+	}
+	
+	
 	public static void main(String[] args) {
-		Grid sudoku = new Grid();
+		int[][] initValues = {
+				{0, 6, 0, 3, 0, 0, 8, 0, 4},
+				{5, 3, 7, 0, 9, 0, 0, 0, 0},
+				{0, 4, 0, 0, 0, 6, 3, 0, 7},
+				
+				{0, 9, 0, 0, 5, 1, 2, 3, 8},
+				{0, 0, 0, 0, 0, 0, 0, 0, 0},
+				{7, 1, 3, 6, 2, 0, 0, 4, 0},
+				
+				{3, 0, 6, 4, 0, 0, 0, 1, 0},
+				{0, 0, 0, 0, 6, 0, 5, 2, 3},
+				{1, 0, 2, 0, 0, 9, 0, 8, 0},
+		};
+		
+		Grid sudoku = new Grid(initValues);
 //		sudoku.processInput();
 		sudoku.solve();
 	}
