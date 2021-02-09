@@ -30,13 +30,15 @@ public class Grid {
 				if (tg.isComplete()) continue;
 				
 				for (Tile t : tg.tiles) {
-					if (t.getNum() != 0) continue;
+					if (t.getNum() != 0) continue; //already filled, skip
 					
 					int emptyPos = t.getPosition().row + t.getPosition().col + (t.getPosition().row * 2);
 					
 					ArrayList<Integer> rowNumbers = checkSurroundings(0, i+1, emptyPos+1, false);
 					ArrayList<Integer> colNumbers = checkSurroundings(1, i+1, emptyPos+1, false);
 					
+					
+					//Check for unique occurrence
 					Stream<Integer> rowStream = rowNumbers.stream().filter(n -> n != 0);
 					Stream<Integer> colStream = colNumbers.stream().filter(n -> n != 0);
 					Stream<Integer> tileGroupStream = Stream.of(tg.tiles).filter(n -> n.getNum() != 0).map(nm -> nm.getNum());
@@ -44,6 +46,7 @@ public class Grid {
 					Set<Integer> placed = Stream.concat(tileGroupStream, Stream.concat(rowStream, colStream)).distinct().collect(Collectors.toSet()); 
 					HashSet<Integer> validSet = new HashSet<Integer>(Arrays.asList(valid));
 					validSet.removeAll(placed);
+					
 					
 					if (validSet.size() > 1) continue;
 
@@ -93,10 +96,11 @@ public class Grid {
 			completed &= grid.get(i).isEmpty();
 		}
 		
-		//check if valid in its own tilegroup
-		//check if setting the number at the position is valid for the given row and col in the entire grid
 		ArrayList<Integer> rowNumbers = checkSurroundings(0, tileGroup, position, completed);
 		ArrayList<Integer> colNumbers = checkSurroundings(1, tileGroup, position, completed);
+
+		//check if valid in its own tile group
+		//check if setting the number at the position is valid for the given row and col in the entire grid
 		if (!tg.isValid(completed) || !(isValid(rowNumbers, completed) && isValid(colNumbers, completed)) ) {
 			tile.setNum(originalValue);
 			System.err.println("Unable to put in "+num+" in Group "+tileGroup+" at index "+position+", as it violates the tile group uniqueness rule.\nReverting to previous value of "+originalValue+"\n\n");
