@@ -35,8 +35,27 @@ public class Grid {
 		System.out.println(this);
 	}
 	
+	int[][] createSudoku() {
+		int[][] initValues = {
+				//Easy
+				{0, 6, 0,  3, 0, 0,  8, 0, 4},
+				{5, 3, 7,  0, 9, 0,  0, 0, 0},
+				{0, 4, 0,  0, 0, 6,  3, 0, 7},
+				
+				{0, 9, 0,  0, 5, 1,  2, 3, 8},
+				{0, 0, 0,  0, 0, 0,  0, 0, 0},
+				{7, 1, 3,  6, 2, 0,  0, 4, 0},
+				
+				{3, 0, 6,  4, 0, 0,  0, 1, 0},
+				{0, 0, 0,  0, 6, 0,  5, 2, 3},
+				{1, 0, 2,  0, 0, 9,  0, 8, 0},
+		};
+		//TODO: Implement method to create a sudoku puzzle randomly  
+		return initValues;
+	}
+	
 	void solve() {
-		while (!isComplete(grid)) {
+		while (!isSolved()) {
 			
 			boolean exhausted = true;
 			boolean finalised = true;
@@ -50,11 +69,12 @@ public class Grid {
 					
 					int emptyPos = t.getPosition().row + t.getPosition().col + (t.getPosition().row * 2);
 					
-					Stream<Integer> rowStream = checkSurroundings(0, i+1, emptyPos+1, false).stream().filter(n -> n != 0);
-					Stream<Integer> colStream = checkSurroundings(1, i+1, emptyPos+1, false).stream().filter(n -> n != 0);
+					Stream<Integer> rowStream = checkSurroundings(0, i+1, emptyPos+1).stream().filter(n -> n != 0);
+					Stream<Integer> colStream = checkSurroundings(1, i+1, emptyPos+1).stream().filter(n -> n != 0);
 					Stream<Integer> tileGroupStream = Stream.of(tg.tiles).filter(n -> n.getNum() != 0).map(nm -> nm.getNum());
 					
-					Set<Integer> placed = Stream.concat(tileGroupStream, Stream.concat(rowStream, colStream)).distinct().collect(Collectors.toSet()); 
+					Set<Integer> placed = Stream.concat(tileGroupStream, Stream.concat(rowStream, colStream))
+							.distinct().collect(Collectors.toSet()); 
 					HashSet<Integer> validSet = new HashSet<>(Arrays.asList(valid));
 					validSet.removeAll(placed);
 					
@@ -267,14 +287,15 @@ public class Grid {
 			completed &= grid.get(i).isEmpty();
 		}
 		
-		ArrayList<Integer> rowNumbers = checkSurroundings(0, tileGroup, position, completed);
-		ArrayList<Integer> colNumbers = checkSurroundings(1, tileGroup, position, completed);
+		ArrayList<Integer> rowNumbers = checkSurroundings(0, tileGroup, position);
+		ArrayList<Integer> colNumbers = checkSurroundings(1, tileGroup, position);
 
 		//check if valid in its own tile group
 		//check if setting the number at the position is valid for the given row and col in the entire grid
 		if (!tg.isValid(completed) || !(isValid(rowNumbers, completed) && isValid(colNumbers, completed)) ) {
 			tile.setNum(originalValue);
-			System.err.println("Unable to put in "+num+" in Group "+tileGroup+" at index "+position+", as it violates the tile group uniqueness rule.\nReverting to previous value of "+originalValue+"\n\n");
+			System.err.println("Unable to put in "+num+" in Group "+tileGroup+" at index "+position
+					+", as it violates the tile group uniqueness rule.\nReverting to previous value of "+originalValue+"\n\n");
 			return;
 		}
 		
@@ -283,7 +304,7 @@ public class Grid {
 		return;
 	}
 	
-	public ArrayList<Integer> checkSurroundings(int rowOrCol, int tileGroup, int position, boolean completed) {
+	public ArrayList<Integer> checkSurroundings(int rowOrCol, int tileGroup, int position) {
 		int refIndex = rowOrCol == 0 ? (position-1) / 3 : (position-1) % 3;
 		int index = rowOrCol == 0 ? (tileGroup-1) % 3 : (tileGroup-1) / 3;
 		
@@ -380,6 +401,17 @@ public class Grid {
 		boolean solved = true;
 		for (int i = 0; i < grid.size(); i++) {
 			solved &= grid.get(i).isValid(true);
+			//TODO: need to check for uniqueness per row and col too
+			for (int t = 0; t < grid.get(i).tiles.length; t++) {
+				ArrayList<Integer> rowNumbers = checkSurroundings(0, grid.get(i).tileGroup, t+1);
+				ArrayList<Integer> colNumbers = checkSurroundings(1, grid.get(i).tileGroup, t+1);
+
+				//check if valid in its own tile group
+				//check if setting the number at the position is valid for the given row and col in the entire grid
+				if (!grid.get(i).isValid(true) || !(isValid(rowNumbers, true) && isValid(colNumbers, true)) ) {
+					return false;
+				}
+			}
 		}
 		return solved;
 	}
@@ -478,6 +510,7 @@ public class Grid {
 	
 	
 	public static void main(String[] args) {
+		long startTime = System.currentTimeMillis();
 		int[][] initValues = {
 				//Easy
 //				{0, 6, 0,  3, 0, 0,  8, 0, 4},
@@ -534,8 +567,11 @@ public class Grid {
 		};
 		
 		Grid sudoku = new Grid(initValues);
-//		sudoku.processInput();
+		//sudoku.processInput();
 		sudoku.solve();
+		long endTime = System.currentTimeMillis();
+		long timeElapsed = endTime - startTime;
+		System.out.println("Execution time in milliseconds: " + timeElapsed);
 	}
 	
 	public String printPossibleValues() {
