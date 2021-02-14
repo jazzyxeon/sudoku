@@ -3,6 +3,7 @@ package sudoku;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -15,9 +16,20 @@ public class Grid {
 	public ArrayList<TileGroup> grid = new ArrayList<TileGroup>();
 	
 	public Grid(int[][] initValues) {
-		for (int i = 0; i < 9; i++) {
-			grid.add(new TileGroup(i+1));
+		for (int i = 1; i <= 9; i++) {
+			grid.add(new TileGroup(i));
 		}
+		
+		if (initValues.length != 9) {
+			throw new Error("Please ensure the input has 9 rows of numbers");
+		}
+		
+		for (int[] i : initValues) {
+			if (i.length != 9) {
+				throw new Error("Please ensure the input has 9 columns of numbers");
+			}
+		}
+		
 		initialiseValuesByRow(initValues);
 		
 		System.out.println(this);
@@ -25,6 +37,10 @@ public class Grid {
 	
 	void solve() {
 		while (!isComplete(grid)) {
+			
+			boolean exhausted = true;
+			boolean finalised = true;
+			
 			for (int i = 0; i < grid.size(); i++) {
 				TileGroup tg = grid.get(i);
 				if (tg.isComplete()) continue;
@@ -34,30 +50,184 @@ public class Grid {
 					
 					int emptyPos = t.getPosition().row + t.getPosition().col + (t.getPosition().row * 2);
 					
-					
-					ArrayList<Integer> rowNumbers = checkSurroundings(0, i+1, emptyPos+1, false);
-					ArrayList<Integer> colNumbers = checkSurroundings(1, i+1, emptyPos+1, false);
-					
-					
-					//Check for unique occurrence
-					Stream<Integer> rowStream = rowNumbers.stream().filter(n -> n != 0);
-					Stream<Integer> colStream = colNumbers.stream().filter(n -> n != 0);
+					Stream<Integer> rowStream = checkSurroundings(0, i+1, emptyPos+1, false).stream().filter(n -> n != 0);
+					Stream<Integer> colStream = checkSurroundings(1, i+1, emptyPos+1, false).stream().filter(n -> n != 0);
 					Stream<Integer> tileGroupStream = Stream.of(tg.tiles).filter(n -> n.getNum() != 0).map(nm -> nm.getNum());
 					
 					Set<Integer> placed = Stream.concat(tileGroupStream, Stream.concat(rowStream, colStream)).distinct().collect(Collectors.toSet()); 
-					HashSet<Integer> validSet = new HashSet<Integer>(Arrays.asList(valid));
+					HashSet<Integer> validSet = new HashSet<>(Arrays.asList(valid));
 					validSet.removeAll(placed);
 					
+					t.possibleValues = validSet;
 					
 					if (validSet.size() > 1) continue;
-
-					putNumber(validSet.stream().findFirst().get(), i+1, emptyPos+1, false);
+					
+					int val = validSet.stream().findFirst().get();
+					putNumber(val, tg.tileGroup, emptyPos+1, false);
+					removeValueInTileGroup(val, tg.tileGroup);
+				}
+				
+				exhausted = locateUniqueOccurrence(tg);
+				finalised = exhausted;
+			}
+			
+			
+			if (exhausted) {
+				for (TileGroup tg : grid) {
+					if (tg.isComplete()) continue;
+					for (int t = 0; t < tg.tiles.length; t++) {
+						if (tg.tiles[t].getNum() != 0) continue;
+						checkAdjacentUniqueness(tg, t, 0, tg.tiles[t].getPosition().row); 
+						finalised = checkAdjacentUniqueness(tg, t, 1, tg.tiles[t].getPosition().col);
+					}
+				}
+				grid.forEach(n -> locateUniqueOccurrence(n));
+			}
+			
+			if (finalised) {
+				for (TileGroup tg : grid) {
+					if (tg.isComplete()) continue;
+					
+					for (int t = 0; t < tg.tiles.length; t++) {
+						if (tg.tiles[t].getNum() != 0) continue;
+						
+						Set<Integer> pval = tg.tiles[t].possibleValues;
+						
+						//check for any similar values in adjacent row
+						checkSamePairValueInTileGroup(tg, t, pval, 0);
+						
+						//check for any similar values in adjacent col
+						checkSamePairValueInTileGroup(tg, t, pval, 1);
+					}
 				}
 			}
+			//System.out.println(printPossibleValues());
 		}
 		System.out.println(this);
 	}
 	
+	void checkSamePairValueInTileGroup(TileGroup tg, int t, Set<Integer> pval, int rowOrCol) {
+		for (int x = 0; x < 9; x++) {
+			if (rowOrCol == 0 
+					? tg.tiles[t].getPosition().row != tg.tiles[x].getPosition().row
+					: tg.tiles[t].getPosition().col != tg.tiles[x].getPosition().col) continue;
+			
+			
+			if ( x != t && tg.tiles[x].getNum() == 0) {
+				if (pval.equals(tg.tiles[x].possibleValues) && pval.size() == 2) {
+					removeValuesInTileGroup(pval, tg.tileGroup);
+				}
+			}
+		}
+	}
+	
+	
+	boolean checkAdjacentUniqueness(TileGroup tg, int t, int rowOrCol, int rowOrColIndex) {
+		boolean finalised = true;
+		int rowUpperBound = tg.tileGroup < 4 
+				? 2 : (tg.tileGroup > 3 && tg.tileGroup < 7 
+						? 5: 8);
+		
+		int colUpperBound = Arrays.asList(1,4,7).contains(tg.tileGroup) 
+				? 6 : (Arrays.asList(2,5,8).contains(tg.tileGroup) 
+						? 7 : 8);
+		 
+		int upperBound = rowOrCol == 0 ? rowUpperBound : colUpperBound;
+		
+		Tile[] tl = tg.tiles; 
+		for (int p : tl[t].possibleValues) {
+			if (existInTileGroup(p, rowOrColIndex, t, tl, rowOrCol)) continue;
+			
+			finalised = rowOrCol == 0 
+					? removeFromTileRow(p, rowOrColIndex, tg.tileGroup, upperBound)
+							: removeFromTileCol(p, rowOrColIndex, tg.tileGroup, upperBound);
+		}
+		return finalised;
+	}
+	
+	
+	void removeValuesInTileGroup(Set<Integer> pval, int tileGroup) {
+		for (Tile t : grid.get(tileGroup-1).tiles) {
+			if (t.getNum() != 0 || t.possibleValues.equals(pval)) continue;
+			t.possibleValues.removeAll(pval);
+			if (t.possibleValues.size() == 1) {
+				int val = t.possibleValues.stream().findFirst().get();
+				putNumber(val, tileGroup, Arrays.asList(grid.get(tileGroup-1).tiles).indexOf(t)+1, false);
+				removeValueInTileGroup(val, tileGroup);
+			}
+		}
+	}
+	
+	void removeValueInTileGroup(int val, int tileGroup) {
+		for (Tile t : grid.get(tileGroup-1).tiles) {
+			if (t.possibleValues == null || !t.possibleValues.contains(val)) continue;
+			t.possibleValues.remove(val);
+		}
+	}
+
+	public boolean locateUniqueOccurrence(TileGroup tg) {
+		boolean exhausted = true;
+		LinkedHashMap<Integer, Integer> countFreq = new LinkedHashMap<>();
+		for (Tile t : tg.tiles) {
+			if (t.getNum() != 0) continue;
+			for (int y : t.possibleValues) {
+				countFreq.put(y, (countFreq.containsKey(y) ? countFreq.get(y) : 0) + 1);
+			}
+		}
+		
+		for (int key : countFreq.keySet()) {
+			if (countFreq.get(key) == 1) {
+				for (int t = 0; t < tg.tiles.length; t++) {
+					if (tg.tiles[t].getNum() != 0 || !tg.tiles[t].possibleValues.contains(key)) continue;
+					exhausted = false;
+					removeValueInTileGroup(key, tg.tileGroup);
+					putNumber(key, tg.tileGroup, t+1, false);
+				}
+			}
+		}
+		return exhausted;
+	}
+	
+	public boolean removeFromTileRow(int num, int row, int tileGroup, int upperBound) {
+		boolean finalised = true;
+		for (int u = upperBound; u > (upperBound - 3); u--) {
+			if (u == (tileGroup-1)) continue;
+			for (Tile t : grid.get(u).tiles) {
+				if (t.getNum() != 0) continue;
+				if (t.getPosition().row == row && t.possibleValues.contains(num)) {
+					finalised = false;
+					t.possibleValues.remove(num);
+				}
+			}
+		}
+		return finalised;
+	}
+	
+	public boolean removeFromTileCol(int num, int col, int tileGroup, int upperBound) {
+		boolean finalised = true;
+		for (int u = upperBound; u >= (upperBound - 6); u-=3) {
+			if (u == (tileGroup-1)) continue;
+			for (Tile t : grid.get(u).tiles) {
+				if (t.getNum() != 0) continue;
+				if (t.getPosition().col == col && t.possibleValues.contains(num)) {
+					finalised = false;
+					t.possibleValues.remove(num);
+				}
+			}
+		}
+		return finalised;
+	}
+	
+	public boolean existInTileGroup(int possibleVal, int rowOrColIndex, int startIndex, Tile[] tiles, int rowOrCol) {
+		for (int s = 0; s < 9; s++) {
+			if (s == startIndex || tiles[s].getNum() != 0) continue;
+			if (tiles[s].possibleValues.contains(possibleVal) && 
+					(rowOrCol == 0 ? tiles[s].getPosition().row : tiles[s].getPosition().col) != rowOrColIndex) {
+				return true;
+			}
+		}
+		return false;
+	}
 	
 	public void putNumber(int num, int tileGroup, int position, boolean init) {
 		if (tileGroup < 0 || position < 0 ) {
@@ -108,7 +278,7 @@ public class Grid {
 			return;
 		}
 		
-		System.out.println("Successfully placed "+num+" in Group "+tileGroup+" at index "+position+"\n\n");
+		System.out.println("Successfully placed "+num+" in Group "+tileGroup+" at position "+position+"\n\n");
 		
 		return;
 	}
@@ -210,7 +380,6 @@ public class Grid {
 		boolean solved = true;
 		for (int i = 0; i < grid.size(); i++) {
 			solved &= grid.get(i).isValid(true);
-			//TODO: need to check for uniqueness per row and col too
 		}
 		return solved;
 	}
@@ -310,22 +479,75 @@ public class Grid {
 	
 	public static void main(String[] args) {
 		int[][] initValues = {
-				{0, 6, 0, 3, 0, 0, 8, 0, 4},
-				{5, 3, 7, 0, 9, 0, 0, 0, 0},
-				{0, 4, 0, 0, 0, 6, 3, 0, 7},
+				//Easy
+//				{0, 6, 0,  3, 0, 0,  8, 0, 4},
+//				{5, 3, 7,  0, 9, 0,  0, 0, 0},
+//				{0, 4, 0,  0, 0, 6,  3, 0, 7},
+//				
+//				{0, 9, 0,  0, 5, 1,  2, 3, 8},
+//				{0, 0, 0,  0, 0, 0,  0, 0, 0},
+//				{7, 1, 3,  6, 2, 0,  0, 4, 0},
+//				
+//				{3, 0, 6,  4, 0, 0,  0, 1, 0},
+//				{0, 0, 0,  0, 6, 0,  5, 2, 3},
+//				{1, 0, 2,  0, 0, 9,  0, 8, 0},
 				
-				{0, 9, 0, 0, 5, 1, 2, 3, 8},
-				{0, 0, 0, 0, 0, 0, 0, 0, 0},
-				{7, 1, 3, 6, 2, 0, 0, 4, 0},
+				//Medium
+//				{0, 3, 0,  7, 0, 8,  0, 0, 0},
+//				{0, 0, 0,  0, 0, 0,  2, 0, 0},
+//				{0, 0, 4,  0, 0, 0,  0, 7, 1},
+//				
+//				{6, 0, 1,  0, 0, 0,  0, 0, 2},
+//				{7, 0, 0,  0, 0, 5,  0, 0, 0},
+//				{0, 0, 0,  0, 0, 0,  8, 5, 0},
+//				
+//				{0, 0, 3,  0, 8, 0,  0, 0, 0},
+//				{9, 2, 0,  0, 6, 0,  0, 0, 5},
+//				{1, 0, 0,  0, 0, 0,  9, 0, 6},
 				
-				{3, 0, 6, 4, 0, 0, 0, 1, 0},
-				{0, 0, 0, 0, 6, 0, 5, 2, 3},
-				{1, 0, 2, 0, 0, 9, 0, 8, 0},
+				//Hard
+//				{4, 0, 0,  0, 0, 0,  0, 0, 0},
+//				{0, 0, 0,  0, 0, 9,  0, 0, 0},
+//				{0, 0, 0,  0, 0, 0,  7, 8, 5},
+//				
+//				{0, 0, 7,  0, 4, 8,  0, 5, 0},
+//				{0, 0, 1,  3, 0, 0,  0, 0, 0},
+//				{0, 0, 6,  0, 7, 0,  0, 0, 0},
+//				
+//				{8, 6, 0,  0, 0, 0,  9, 0, 3},
+//				{7, 0, 0,  0, 0, 5,  0, 6, 2},
+//				{0, 0, 3,  7, 0, 0,  0, 0, 0},
+				
+				//Hard - Anti-backtrack
+				{0, 0, 0,  0, 0, 0,  0, 0, 0},
+				{0, 0, 0,  0, 0, 3,  0, 8, 5},
+				{0, 0, 1,  0, 2, 0,  0, 0, 0},
+				
+				{0, 0, 0,  5, 0, 7,  0, 0, 0},
+				{0, 0, 4,  0, 0, 0,  1, 0, 0},
+				{0, 9, 0,  0, 0, 0,  0, 0, 0},
+				
+				{5, 0, 0,  0, 0, 0,  0, 7, 3},
+				{0, 0, 2,  0, 1, 0,  0, 0, 0},
+				{0, 0, 0,  0, 4, 0,  0, 0, 9},
+				
 		};
 		
 		Grid sudoku = new Grid(initValues);
 //		sudoku.processInput();
 		sudoku.solve();
+	}
+	
+	public String printPossibleValues() {
+		String out = "";
+		for (int i = 0; i < 9; i++) {
+			out += grid.get(i).tileGroup;
+			for (int j = 0; j < 9; j++) {
+				Tile t = grid.get(i).tiles[j];
+				out += (j % 3 == 0 ? "\n" : "") +(t.possibleValues != null ? t.possibleValues : t.getNum()) + (j == 8 ? "\n\n" : " | ");
+			}
+		}
+		return out;
 	}
 	
 	@Override
@@ -334,7 +556,7 @@ public class Grid {
 		TileGroup[] tgs = new TileGroup[3];
 		for (int i = 1; i < 9; i+=3) {
 			for (int j = 0; j < 3; j++) {
-				ArrayList<Integer> list = this.getAllNumbersInPosition(0, j, 0, i, tgs);
+				ArrayList<Integer> list = getAllNumbersInPosition(0, j, 0, i, tgs);
 				out += list.stream().map(Object::toString).collect(Collectors.joining(" | ")) + (j < 2 ? "\n" : "\n\n");
 			}
 		}

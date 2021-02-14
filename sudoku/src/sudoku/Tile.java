@@ -1,9 +1,12 @@
 package sudoku;
 
+import java.util.Set;
+
 public class Tile {
 	private int num;
 	public final boolean setupNum;
 	private TilePosition<Integer, Integer> tilePos;
+	public Set<Integer> possibleValues = null;
 	
 	public Tile(int num, int row, int col, boolean setupNum){
 		validateInput(num, row, col);
@@ -40,10 +43,14 @@ public class Tile {
 	}
 
 	public void setNum(int num) {
+		if (num < 0) {
+			throw new Error("Lower bound violation: the lowest input number allowed is 0");
+		}
 		if (num > 9) {
 			throw new Error("Upper bound violation: the highest input number allowed is 9");
 		}
 		this.num = num;
+		possibleValues = null;
 	}
 	
 	@Override
