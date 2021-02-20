@@ -29,6 +29,12 @@ public class TileGroup {
 		return Arrays.asList(Stream.of(tiles).map(n -> n.getNum()).toArray()).indexOf(number);
 	}
 	
+	void clear() {
+		for (Tile t : tiles) {
+			t.setNum(0);
+		}
+	}
+	
 	
 	public boolean isValid(boolean checkSolved) {
 		if (checkSolved && !isComplete()) {

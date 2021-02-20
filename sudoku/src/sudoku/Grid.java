@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.Scanner;
+import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -14,49 +14,204 @@ public class Grid {
 	Integer[] valid = {1,2,3,4,5,6,7,8,9};
 	String[] validAction = Stream.of(valid).map(Object::toString).toArray(String[]::new);
 	public ArrayList<TileGroup> grid = new ArrayList<TileGroup>();
+	final int[][] initValues = {
+//			Easy
+//			{0, 6, 0,  3, 0, 0,  8, 0, 4},
+//			{5, 3, 7,  0, 9, 0,  0, 0, 0},
+//			{0, 4, 0,  0, 0, 6,  3, 0, 7},
+//			
+//			{0, 9, 0,  0, 5, 1,  2, 3, 8},
+//			{0, 0, 0,  0, 0, 0,  0, 0, 0},
+//			{7, 1, 3,  6, 2, 0,  0, 4, 0},
+//			
+//			{3, 0, 6,  4, 0, 0,  0, 1, 0},
+//			{0, 0, 0,  0, 6, 0,  5, 2, 3},
+//			{1, 0, 2,  0, 0, 9,  0, 8, 0},
+			
+//			Medium
+//			{0, 3, 0,  7, 0, 8,  0, 0, 0},
+//			{0, 0, 0,  0, 0, 0,  2, 0, 0},
+//			{0, 0, 4,  0, 0, 0,  0, 7, 1},
+//			
+//			{6, 0, 1,  0, 0, 0,  0, 0, 2},
+//			{7, 0, 0,  0, 0, 5,  0, 0, 0},
+//			{0, 0, 0,  0, 0, 0,  8, 5, 0},
+//			
+//			{0, 0, 3,  0, 8, 0,  0, 0, 0},
+//			{9, 2, 0,  0, 6, 0,  0, 0, 5},
+//			{1, 0, 0,  0, 0, 0,  9, 0, 6},
+			
+//			Hard
+//			{4, 0, 0,  0, 0, 0,  0, 0, 0},
+//			{0, 0, 0,  0, 0, 9,  0, 0, 0},
+//			{0, 0, 0,  0, 0, 0,  7, 8, 5},
+//			
+//			{0, 0, 7,  0, 4, 8,  0, 5, 0},
+//			{0, 0, 1,  3, 0, 0,  0, 0, 0},
+//			{0, 0, 6,  0, 7, 0,  0, 0, 0},
+//			
+//			{8, 6, 0,  0, 0, 0,  9, 0, 3},
+//			{7, 0, 0,  0, 0, 5,  0, 6, 2},
+//			{0, 0, 3,  7, 0, 0,  0, 0, 0},
+			
+//			Hard - Anti-backtrack
+//			{0, 0, 0,  0, 0, 0,  0, 0, 0},
+//			{0, 0, 0,  0, 0, 3,  0, 8, 5},
+//			{0, 0, 1,  0, 2, 0,  0, 0, 0},
+//			
+//			{0, 0, 0,  5, 0, 7,  0, 0, 0},
+//			{0, 0, 4,  0, 0, 0,  1, 0, 0},
+//			{0, 9, 0,  0, 0, 0,  0, 0, 0},
+//			
+//			{5, 0, 0,  0, 0, 0,  0, 7, 3},
+//			{0, 0, 2,  0, 1, 0,  0, 0, 0},
+//			{0, 0, 0,  0, 4, 0,  0, 0, 9},
+			
+			
+			//Hardest sudoku in the world
+//			{8, 0, 0,  0, 0, 0,  0, 0, 0},
+//			{0, 0, 3,  6, 0, 0,  0, 0, 0},
+//			{0, 7, 0,  0, 9, 0,  2, 0, 0},
+//			
+//			{0, 5, 0,  0, 0, 7,  0, 0, 0},
+//			{0, 0, 0,  0, 4, 5,  7, 0, 0},
+//			{0, 0, 0,  1, 0, 0,  0, 3, 0},
+//			
+//			{0, 0, 1,  0, 0, 0,  0, 6, 8},
+//			{0, 0, 8,  5, 0, 0,  0, 1, 0},
+//			{0, 9, 0,  0, 0, 0,  4, 0, 0},
+	};
 	
-	public Grid(int[][] initValues) {
+	public Grid() {
 		for (int i = 1; i <= 9; i++) {
 			grid.add(new TileGroup(i));
 		}
-		
-		if (initValues.length != 9) {
-			throw new Error("Please ensure the input has 9 rows of numbers");
-		}
-		
-		for (int[] i : initValues) {
-			if (i.length != 9) {
-				throw new Error("Please ensure the input has 9 columns of numbers");
+//		initialiseSudoku(initValues);
+	}
+	
+	void initialiseSudoku(int[][] initValues) {
+		if (initValues != null) {
+			if (initValues.length != 9) {
+				throw new Error("Please ensure the input has 9 rows of numbers");
 			}
+			
+			for (int[] i : initValues) {
+				if (i.length != 9) {
+					throw new Error("Please ensure the input has 9 columns of numbers");
+				}
+			}
+			
+			initialiseValuesByRow(initValues);
 		}
-		
-		initialiseValuesByRow(initValues);
-		
 		System.out.println(this);
 	}
 	
-	int[][] createSudoku() {
-		int[][] initValues = {
-				//Easy
-				{0, 6, 0,  3, 0, 0,  8, 0, 4},
-				{5, 3, 7,  0, 9, 0,  0, 0, 0},
-				{0, 4, 0,  0, 0, 6,  3, 0, 7},
-				
-				{0, 9, 0,  0, 5, 1,  2, 3, 8},
-				{0, 0, 0,  0, 0, 0,  0, 0, 0},
-				{7, 1, 3,  6, 2, 0,  0, 4, 0},
-				
-				{3, 0, 6,  4, 0, 0,  0, 1, 0},
-				{0, 0, 0,  0, 6, 0,  5, 2, 3},
-				{1, 0, 2,  0, 0, 9,  0, 8, 0},
-		};
-		//TODO: Implement method to create a sudoku puzzle randomly  
-		return initValues;
+	void initialiseValuesByRow(int[][] initValues) {
+		for (int i = 0; i < initValues.length; i++) {
+			for (int j = 0; j < initValues.length; j++) {
+				if (initValues[i][j] == 0) continue;
+				int tileGroup = (i/3 + j/3) + (i < 3 ? 1 : (i > 2 && i < 6 ? 3 : 5));
+				int initPos = (i%3) * 3 + (j%3) + 1;
+				putNumber(initValues[i][j], tileGroup, initPos, true, false);
+			}
+		}
 	}
 	
-	void solve() {
-		while (!isSolved()) {
+	void initialiseValuesByTileGroup(int[][] initValues) {
+		//Use this if initializing per 9-tile group from top left to right instead of per row of sudoku grid
+		for (int i = 0; i < initValues.length; i++) {
+			for (int j = 0; j < initValues.length; j++) {
+				if (initValues[i][j] == 0) continue;
+				putNumber(initValues[i][j], i+1, j+1, true, false);
+			}
+		}
+	}
+	
+	
+	void createSudoku() {
+		fillSudoku();
+		if (isComplete(grid)) {
+			System.out.println(this);
+		}
+	}
+	
+	void fillSudoku() {
+		Random rand = new Random();
+		int rewinder = 0;
+		int i = 0;
+		while (i < grid.size()) {
+			TileGroup tg = grid.get(i);
+			ArrayList<Set<Integer>> possible = new ArrayList<>();
 			
+			for (int x = 0; x < tg.tiles.length; x++) {
+				Stream<Integer> rowStream = checkSurroundings(0, tg.tileGroup, x+1).stream().filter(n -> n != 0);
+				Stream<Integer> colStream = checkSurroundings(1, tg.tileGroup, x+1).stream().filter(n -> n != 0);
+				Stream<Integer> tileGroupStream = Stream.of(tg.tiles).filter(n -> n.getNum() != 0).map(nm -> nm.getNum());
+				
+				Set<Integer> placed = Stream.concat(tileGroupStream, Stream.concat(rowStream, colStream))
+						.distinct().collect(Collectors.toSet());
+				HashSet<Integer> validSet = new HashSet<>(Arrays.asList(valid));
+				validSet.removeAll(placed);
+				
+				possible.add(validSet);
+			}
+			
+			
+			//if there are more empty set in possible values than there are empty tile, rewind
+			long emptyCount = possible.stream().filter(n -> n.isEmpty()).count();
+			long emptyTile = Stream.of(tg.tiles).filter(n -> n.isEmpty()).count();
+
+			if ((possible.size()-emptyCount) < emptyTile) {
+				tg.clear();
+				rewinder = (i-rewinder == 0) ? 0 : rewinder+1;
+				i = (i-rewinder == 0) ? 0 : i-rewinder;
+				grid.get(i).clear();
+				continue;
+			}
+			
+			//if there's any set with only 1 possible value, assign it and remove it from other sets
+			for (Set<Integer> pos : possible) {
+				if (pos.size() != 1) continue;
+				int n = (int) pos.toArray()[0];
+				putNumber(n, tg.tileGroup, possible.indexOf(pos)+1, false, false);
+				pos.clear();
+				possible.forEach(p -> p.remove(n));
+			}
+			
+			for (int y = 0; y < possible.size(); y++) {
+				
+				//if possible set is empty, check if the tile has value. If so, skip. Else, rewind
+				if (possible.get(y).isEmpty()) {
+					if (!tg.tiles[y].isEmpty()) continue;
+					
+					long remain = possible.stream().filter(n -> !n.isEmpty()).count();
+					long counter = Stream.of(tg.tiles).filter(n -> n.isEmpty()).count();
+					
+					if (remain >= counter) continue;
+					
+					tg.clear();
+					i-=1;
+					break;
+				}
+				
+				int r = (int) possible.get(y).toArray()[rand.nextInt(possible.get(y).size())];
+				if (putNumber(r, tg.tileGroup, y+1, false, false)) {
+					possible.get(y).clear();
+					possible.forEach(n -> n.remove(r));
+				}
+			}
+			i++;
+		}
+	}
+	
+	
+	void solve() {
+		if (grid.isEmpty() || grid == null) {
+			System.err.println("Unable to find any values in the grid");
+			return;
+		}
+			
+		while (!isSolved()) {
 			boolean exhausted = true;
 			boolean finalised = true;
 			
@@ -83,7 +238,7 @@ public class Grid {
 					if (validSet.size() > 1) continue;
 					
 					int val = validSet.stream().findFirst().get();
-					putNumber(val, tg.tileGroup, emptyPos+1, false);
+					putNumber(val, tg.tileGroup, emptyPos+1, false, true);
 					removeValueInTileGroup(val, tg.tileGroup);
 				}
 				
@@ -172,7 +327,7 @@ public class Grid {
 			t.possibleValues.removeAll(pval);
 			if (t.possibleValues.size() == 1) {
 				int val = t.possibleValues.stream().findFirst().get();
-				putNumber(val, tileGroup, Arrays.asList(grid.get(tileGroup-1).tiles).indexOf(t)+1, false);
+				putNumber(val, tileGroup, Arrays.asList(grid.get(tileGroup-1).tiles).indexOf(t)+1, false, false);
 				removeValueInTileGroup(val, tileGroup);
 			}
 		}
@@ -201,7 +356,7 @@ public class Grid {
 					if (tg.tiles[t].getNum() != 0 || !tg.tiles[t].possibleValues.contains(key)) continue;
 					exhausted = false;
 					removeValueInTileGroup(key, tg.tileGroup);
-					putNumber(key, tg.tileGroup, t+1, false);
+					putNumber(key, tg.tileGroup, t+1, false, true);
 				}
 			}
 		}
@@ -249,7 +404,7 @@ public class Grid {
 		return false;
 	}
 	
-	public void putNumber(int num, int tileGroup, int position, boolean init) {
+	boolean putNumber(int num, int tileGroup, int position, boolean init, boolean printSteps) {
 		if (tileGroup < 0 || position < 0 ) {
 			throw new Error("Only non-negative integers are valid tile group and position");
 		}
@@ -269,13 +424,13 @@ public class Grid {
 			//initialise value
 			TilePosition<Integer, Integer> coord = new TilePosition<>((position-1) /3,(position-1) % 3);
 			tg.tiles[position-1] = new Tile(num, coord.row, coord.col, init);
-			return;
+			return true;
 		}
 		
 		Tile tile = tg.tiles[position-1];
 		if (tile.setupNum) {
 			System.err.println("Unable to replace a game config value");
-			return;
+			return false;
 		}
 		
 		int originalValue = tile.getNum();
@@ -294,14 +449,14 @@ public class Grid {
 		//check if setting the number at the position is valid for the given row and col in the entire grid
 		if (!tg.isValid(completed) || !(isValid(rowNumbers, completed) && isValid(colNumbers, completed)) ) {
 			tile.setNum(originalValue);
-			System.err.println("Unable to put in "+num+" in Group "+tileGroup+" at index "+position
+			if (printSteps) System.err.println("Unable to put in "+num+" in Group "+tileGroup+" at index "+position
 					+", as it violates the tile group uniqueness rule.\nReverting to previous value of "+originalValue+"\n\n");
-			return;
+			return false;
 		}
 		
-		System.out.println("Successfully placed "+num+" in Group "+tileGroup+" at position "+position+"\n\n");
+		if (printSteps) System.out.println("Successfully placed "+num+" in Group "+tileGroup+" at position "+position+"\n\n");
 		
-		return;
+		return true;
 	}
 	
 	public ArrayList<Integer> checkSurroundings(int rowOrCol, int tileGroup, int position) {
@@ -401,7 +556,6 @@ public class Grid {
 		boolean solved = true;
 		for (int i = 0; i < grid.size(); i++) {
 			solved &= grid.get(i).isValid(true);
-			//TODO: need to check for uniqueness per row and col too
 			for (int t = 0; t < grid.get(i).tiles.length; t++) {
 				ArrayList<Integer> rowNumbers = checkSurroundings(0, grid.get(i).tileGroup, t+1);
 				ArrayList<Integer> colNumbers = checkSurroundings(1, grid.get(i).tileGroup, t+1);
@@ -414,164 +568,6 @@ public class Grid {
 			}
 		}
 		return solved;
-	}
-	
-	void processInput() {
-		String setup = "Pick an action (type number, then press enter):\n";
-		setup += "1 -> Insert a number\n";
-		setup += "2 -> Remove a number\n";
-		setup += "3 -> Forfeit\n";
-		
-		Scanner in = new Scanner(System.in);
-		
-		//need to loop this
-		while (!isComplete(grid)) {
-			int action = prompt(setup, in, new String[]{"1","2","3"});
-			System.out.println(action);
-			if (action != 1 && action != 2) {
-				System.out.println("Bye for now!");
-				System.exit(0);
-			}
-			
-			String numQuestion = "Enter the number to ";
-			if (action == 1) {
-				numQuestion += "insert into the tile group";
-			}
-			else {
-				numQuestion += "remove from the tile group";
-			}
-			
-			int tileGroup = prompt("Enter the target tile group:", in, validAction);
-			int position = prompt("Enter the position of the tile in the group:", in, validAction);
-			
-			
-			if (tileGroup != -1 && position != -1) {
-				if (action == 1) {
-					int num = prompt(numQuestion, in, validAction);
-					if (num != -1) {
-						putNumber(num, tileGroup, position, false);
-					}
-					else {
-						System.err.println("Fatal Error: the input number resolved to -1 and cannot be processed");
-					}
-				}
-				else {
-					putNumber(0, tileGroup, position, false);
-				}
-				System.out.println(this);
-			}
-			else {
-				System.err.println("Fatal Error: either the tile group or position resolved to -1 and cannot be processed");
-			}
-		}
-		
-		in.close();
-		System.out.println("Solved!");
-		//end of loop
-	}
-	
-	int prompt(String question, Scanner scanner, String[] validActions) {
-		System.out.println(question);
-		int out = -1;
-		while (scanner.hasNext()) {
-			String a = scanner.next();
-			
-			if (!Arrays.asList(validActions).contains(a)) {
-				System.err.print("Please enter a valid action in the form of number from the following options:\n");
-				System.err.print(Stream.of(validActions).collect(Collectors.joining(", ")));
-				continue;
-			}
-			out = Integer.parseInt(a);
-			break;
-		}
-		return out;
-	}
-	
-	void initialiseValuesByRow(int[][] initValues) {
-		for (int i = 0; i < initValues.length; i++) {
-			for (int j = 0; j < initValues.length; j++) {
-				if (initValues[i][j] == 0) continue;
-				int tileGroup = (i/3 + j/3) + (i < 3 ? 1 : (i > 2 && i < 6 ? 3 : 5));
-				int initPos = (i%3) * 3 + (j%3) + 1;
-				putNumber(initValues[i][j], tileGroup, initPos, true);
-			}
-		}
-	}
-	
-	void initialiseValuesByTileGroup(int[][] initValues) {
-		//Use this if initializing per 9-tile group from top left to right instead of per row of sudoku grid
-		for (int i = 0; i < initValues.length; i++) {
-			for (int j = 0; j < initValues.length; j++) {
-				if (initValues[i][j] == 0) continue;
-				putNumber(initValues[i][j], i+1, j+1, true);
-			}
-		}
-	}
-	
-	
-	public static void main(String[] args) {
-		long startTime = System.currentTimeMillis();
-		int[][] initValues = {
-				//Easy
-//				{0, 6, 0,  3, 0, 0,  8, 0, 4},
-//				{5, 3, 7,  0, 9, 0,  0, 0, 0},
-//				{0, 4, 0,  0, 0, 6,  3, 0, 7},
-//				
-//				{0, 9, 0,  0, 5, 1,  2, 3, 8},
-//				{0, 0, 0,  0, 0, 0,  0, 0, 0},
-//				{7, 1, 3,  6, 2, 0,  0, 4, 0},
-//				
-//				{3, 0, 6,  4, 0, 0,  0, 1, 0},
-//				{0, 0, 0,  0, 6, 0,  5, 2, 3},
-//				{1, 0, 2,  0, 0, 9,  0, 8, 0},
-				
-				//Medium
-//				{0, 3, 0,  7, 0, 8,  0, 0, 0},
-//				{0, 0, 0,  0, 0, 0,  2, 0, 0},
-//				{0, 0, 4,  0, 0, 0,  0, 7, 1},
-//				
-//				{6, 0, 1,  0, 0, 0,  0, 0, 2},
-//				{7, 0, 0,  0, 0, 5,  0, 0, 0},
-//				{0, 0, 0,  0, 0, 0,  8, 5, 0},
-//				
-//				{0, 0, 3,  0, 8, 0,  0, 0, 0},
-//				{9, 2, 0,  0, 6, 0,  0, 0, 5},
-//				{1, 0, 0,  0, 0, 0,  9, 0, 6},
-				
-				//Hard
-//				{4, 0, 0,  0, 0, 0,  0, 0, 0},
-//				{0, 0, 0,  0, 0, 9,  0, 0, 0},
-//				{0, 0, 0,  0, 0, 0,  7, 8, 5},
-//				
-//				{0, 0, 7,  0, 4, 8,  0, 5, 0},
-//				{0, 0, 1,  3, 0, 0,  0, 0, 0},
-//				{0, 0, 6,  0, 7, 0,  0, 0, 0},
-//				
-//				{8, 6, 0,  0, 0, 0,  9, 0, 3},
-//				{7, 0, 0,  0, 0, 5,  0, 6, 2},
-//				{0, 0, 3,  7, 0, 0,  0, 0, 0},
-				
-				//Hard - Anti-backtrack
-				{0, 0, 0,  0, 0, 0,  0, 0, 0},
-				{0, 0, 0,  0, 0, 3,  0, 8, 5},
-				{0, 0, 1,  0, 2, 0,  0, 0, 0},
-				
-				{0, 0, 0,  5, 0, 7,  0, 0, 0},
-				{0, 0, 4,  0, 0, 0,  1, 0, 0},
-				{0, 9, 0,  0, 0, 0,  0, 0, 0},
-				
-				{5, 0, 0,  0, 0, 0,  0, 7, 3},
-				{0, 0, 2,  0, 1, 0,  0, 0, 0},
-				{0, 0, 0,  0, 4, 0,  0, 0, 9},
-				
-		};
-		
-		Grid sudoku = new Grid(initValues);
-		//sudoku.processInput();
-		sudoku.solve();
-		long endTime = System.currentTimeMillis();
-		long timeElapsed = endTime - startTime;
-		System.out.println("Execution time in milliseconds: " + timeElapsed);
 	}
 	
 	public String printPossibleValues() {
